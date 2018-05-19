@@ -1,0 +1,14 @@
+[Unit]
+Description=Celery Service
+After=network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=true
+User=root
+Group=root
+WorkingDirectory=/work/www/adminset/main
+ExecStart=/work/www/adminset/config/celery/start_celery.sh
+
+[Install]
+WantedBy=multi-user.target
