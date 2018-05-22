@@ -8,7 +8,7 @@
 
     一、服务器安装：
         1.1、下载代码
-            git clone https://github.com/guohongze/adminset.git
+            git clone https://github.com/fengkuangdestone/devops.git
         1.2、执行安装脚本-自动
             adminset/install/server/auto_install.sh
             如果使用自动安装则手动安装跳过,如果手动安装则跳过此步。
@@ -37,7 +37,7 @@
  
         客户端正常使用需要修改脚本中的两个字段：
         token = 'HPcWR7l4NJNJ'        #token是上传到服务器的密钥可以在WEB界面的系统配置中自定义<br>
-        server_ip = '192.168.47.130'  #此项目为adminset server的IP地址，支持域名<br>
+        server_ip = '192.168.xx.xx'  #此项目为adminset server的IP地址，支持域名<br>
 
         #### step2: 拷贝install/client/ 目录到客户机的任意位置并执行:
 
@@ -47,8 +47,8 @@
         #### step3: 客户端管理
         
         service adminsetd start|stop|restart|status
-        客户端会被默认安装在/var/opt/adminset/client/ 目录下
-        agent日志文件/var/opt/adminset/client/agent.log
+        客户端会被默认安装在/work/www/adminset/client/ 目录下
+        agent日志文件/work/www/adminset/client/agent.log
         agent默认每3600秒上传一次资产和硬件信息，可以在adminset_agent.py中自定义
         agent每周一凌晨会清空所有之前生成的日志，如需要历史日志，请自行备份。
         注意：客户端全部功能需要配置服务器到客户端的ssh免密登录。
@@ -60,7 +60,7 @@
         3）这样当客户机第一次上报资产信息到服务器中去会自动触发ssh密钥分发，自动分发成功能后ansible等其它功能不需要手动再配置ssh免密登陆。
 
 #   程序目录
-    安装脚本会将文件安装在/var/opt/adminset
+    安装脚本会将文件安装在/work/www/adminset
     main为程序代码
     config 配置
     pid pid文件
@@ -120,8 +120,8 @@
 
     指向完成后点击资产管理中的webssh按钮会触发域名格式如下：
     {{ host.hostname }}.adminset.cn:2222/ssh/host/{{ host.ip }}
-    如主机名为cmdb IP为 192.168.47.130
-    http://cmdb.adminset.cn:2222/ssh/host/192.168.47.130
+    如主机名为cmdb IP为 192.168.xx.xx
+    http://cmdb.adminset.cn:2222/ssh/host/192.168.xx.xx
     通过此URL进入webssh访问界面，第一次进入时会询问用户名密码，请填写系统对应的用户和密码即可。
 
 
@@ -155,12 +155,12 @@
     输入客户机密码后认证成功可以ssh免密登入
 
     CMDB自动上报主机以后，在ansible页面执行"同步数据"按钮 将主机信息写入ansible的hosts文件
-    然后将playbook 或是role脚本上传到/var/opt/adminset/data/playbook 或/var/opt/adminset/data/roles
+    然后将playbook 或是role脚本上传到/work/www/adminset/data/playbook 或/work/www/adminset/data/roles
 
 #   shell用法
     依赖免密登入（与ansible同）
     CMDB自动上报主机以后，shell界面可以直接调用主机。
-    然后将常用脚本上传到/var/opt/adminset/data/scripts 中shell脚本栏将会自动发现脚本。
+    然后将常用脚本上传到/work/www/adminset/data/scripts 中shell脚本栏将会自动发现脚本。
 
 #   持续交付用法
     依赖免密登入（与ansible同）
@@ -206,11 +206,11 @@
     强烈建设在升级或更新adminset之前先备份数据库，并在测试环境验证通过，因为adminset在快速的发展过程中，每版本功能与结构变化较大。
     0.20 表结构变更较大，不兼容0.1x版本，如果升级请导出数据再导入。
     1) 同中版号升级（如0.2x升级到0.26）
-        下载相应版本的代码到本地，建议下载到/opt/adminset，然后执行：
+        下载相应版本的代码到本地，建议下载到/work/adminset，然后执行：
         chmdo +x adminset/install/server/rsync.sh
         adminset/install/server/rsync.sh
     2）不同中版号更新(如0.2x升级到0.3x)：
-        下载相应版本的代码到本地，建议下载到/opt/adminset，然后执行：
+        下载相应版本的代码到本地，建议下载到/work/adminset，然后执行：
         chmdo +x adminset/install/server/update.sh
         adminset/install/server/update.sh
     3)二次开发
@@ -219,7 +219,7 @@
         update.sh 可带一个参数，参数为需要更新的应用名，如变更了appconf模块的models只更新appconf可以使用update.sh appconf来更新。
         注意：如果做表结构变更，把新生成的{app_name}/migrations中的000X_initial.py文件提交到代码中，以保证更新时ORM配置正确。 
     4) 自动化部署
-        在自动化部署软件如jenkins或adminset中，拉取代码到本地后，再用命令将其复制到更新目标机器的/opt/adminset 目录，然后执行：
+        在自动化部署软件如jenkins或adminset中，拉取代码到本地后，再用命令将其复制到更新目标机器的/work/adminset 目录，然后执行：
         adminset/install/server/update.sh 或rsync.sh(同中版号)。（这一切的前提要求已经初次安装过adminset服务端）
     
 # 安全
@@ -230,4 +230,4 @@
     adminset设计初衷为超级管理员工具集成平台，所以后台权限都使用超管权限，如果生产环境中不符合安全要求，需要自定义各后台权限调用。
 
 # 开发者交流
-  QQ群：536962005
+  QQ：169010000
