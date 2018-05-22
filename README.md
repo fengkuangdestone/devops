@@ -22,10 +22,10 @@ centos 7.2(1511) django 1.11.9 python 2.7<br>
 服务器操作系统版本要求 centos7.2及以上<br>
 ```
 git clone https://github.com/fengkuangdestone/devops.git
-adminset/install/server/auto_install.sh
+install/server/auto_install.sh
 ```
 说明：手动自定义安装请使用<br>
-adminset/install/server/server_install.sh<br>
+install/server/server_install.sh<br>
 
 
 ## 客户端安装
@@ -37,7 +37,7 @@ adminset/install/server/server_install.sh<br>
 ```
 客户端正常使用需要修改脚本中的两个字段：
 token = 'HPcWR7l4NJNJ'        #token是上传到服务器的密钥可以在WEB界面的系统配置中自定义<br>
-server_ip = '192.168.47.130'  #此项目为adminset server的IP地址<br>
+server_ip = '192.168.xx.xx'  #此项目为adminset server的IP地址<br>
 ```
 #### step2: 拷贝install/client/ 目录到客户机的任意位置并执行:
 ```
