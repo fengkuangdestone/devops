@@ -10,12 +10,12 @@
         1.1、下载代码
             git clone https://github.com/fengkuangdestone/devops.git
         1.2、执行安装脚本-自动
-            adminset/install/server/auto_install.sh
+            install/server/auto_install.sh
             如果使用自动安装则手动安装跳过,如果手动安装则跳过此步。
             访问：http://your_server_ip
             使用用户名admin 密码Adminset123
         1.3、执行安装脚本-手动
-            1.3.1 adminset/install/server/server_install.sh
+            1.3.1 install/server/server_install.sh
             安装过程需要输入管理员数据库等交互信息，如果安装中断再次执行server_install.sh即可.
             安装过程中会生成rsa密钥，位于/root/.ssh 目录下，如果已经存在，忽略即可。
             1.3.2、手动安装交互信息说明
