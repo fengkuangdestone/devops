@@ -6,7 +6,7 @@ from subprocess import Popen, PIPE
 import logging
 AGENT_VERSION = "1.0"
 token = 'HPcWR7l4NJNJ'
-server_ip = '192.168.20.x'
+server_ip = '192.168.47.130'
 
 
 def log(log_name, path=None):
@@ -17,7 +17,7 @@ def log(log_name, path=None):
                 filemode='ab+')
     return logging.basicConfig
 
-log("agent.log", "/work/www/adminset/client/")
+log("agent.log", "/var/opt/adminset/client/")
 
 
 def get_ip():
@@ -264,7 +264,7 @@ def get_pid():
 
 
 def clean_log():
-    os.system("> /work/www/adminset/agent.log")
+    os.system("> /var/opt/adminset/agent.log")
     logging.info("clean agent log")
 
 

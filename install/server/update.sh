@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-main_dir="/work/devops/adminset"
+main_dir="/var/opt/adminset"
 adminset_dir="$main_dir/main"
 data_dir="$main_dir/data"
 config_dir="$main_dir/config"
@@ -26,8 +26,8 @@ cd $cur_dir/vendor/WebSSH2
 cd $adminset_dir
 if [ $1 ]
 then
-    python manage.py makemigrations $1
-    python manage.py migrate
+    python manage.py makemigrations
+    python manage.py migrate $1
 else
     python manage.py makemigrations
     python manage.py migrate
@@ -46,7 +46,6 @@ echo "##############install finished###################"
 systemctl daemon-reload
 nginx -s reload
 service adminset restart
-service beat restart
 service celery restart
 echo "you have updated adminset successfully!!!"
 echo "################################################"

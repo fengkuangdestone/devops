@@ -2,7 +2,7 @@
 set -e
 
 # 初始化环境目录
-main_dir="/work/www/adminset"
+main_dir="/var/opt/adminset"
 adminset_dir="$main_dir/main"
 data_dir="$main_dir/data"
 config_dir="$main_dir/config"
@@ -12,6 +12,7 @@ cd .. && cd ..
 cur_dir=$(pwd)
 mkdir -p $adminset_dir
 mkdir -p $data_dir/scripts
+mkdir -p $data_dir/files
 mkdir -p $data_dir/ansible/playbook
 mkdir -p $data_dir/ansible/roles
 mkdir -p $config_dir
@@ -36,7 +37,7 @@ fi
 echo "####install depandencies####"
 yum install -y epel-release
 yum install -y gcc expect python-pip python-devel ansible smartmontools dmidecode libselinux-python git rsync dos2unix
-yum install -y openssl openssl-devel
+yum install -y openssl openssl-devel openldap-devel
 # build webssh
 echo "build webssh"
 /usr/bin/yum install -y nodejs
@@ -59,7 +60,7 @@ fi
 scp $adminset_dir/install/server/ansible/ansible.cfg /etc/ansible/ansible.cfg
 
 # install webssh
-scp /work/www/adminset/main/install/server/webssh/webssh.service /usr/lib/systemd/system/webssh.service
+scp /var/opt/adminset/main/install/server/webssh/webssh.service /usr/lib/systemd/system/webssh.service
 systemctl enable webssh.service
 
 
@@ -89,11 +90,13 @@ index-url = http://mirrors.aliyun.com/pypi/simple/
 [install]
 trusted-host=mirrors.aliyun.com
 EOF
-pip install kombu==4.1.0
-pip install celery==4.0.2
+pip install -U pip
+pip install --ignore-installed enum34==1.1.6
+pip install --ignore-installed ipaddress==1.0.18
+pip install kombu==4.2.1
+pip install celery==4.2.1
 pip install billiard==3.5.0.3
-pip install pytz==2017.2
-pip install kombu==4.1.0
+pip install pytz==2017.3
 cd $adminset_dir/vendor/django-celery-results-master
 python setup.py build
 python setup.py install
@@ -110,6 +113,7 @@ scp $adminset_dir/install/server/adminset.service /usr/lib/systemd/system
 systemctl daemon-reload
 chkconfig adminset on
 service adminset start
+
 
 #安装redis
 echo "####install redis####"

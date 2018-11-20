@@ -8,14 +8,14 @@
 
     一、服务器安装：
         1.1、下载代码
-            git clone https://github.com/fengkuangdestone/devops.git
+            git clone https://github.com/guohongze/adminset.git
         1.2、执行安装脚本-自动
-            install/server/auto_install.sh
+            adminset/install/server/auto_install.sh
             如果使用自动安装则手动安装跳过,如果手动安装则跳过此步。
             访问：http://your_server_ip
             使用用户名admin 密码Adminset123
         1.3、执行安装脚本-手动
-            1.3.1 install/server/server_install.sh
+            1.3.1 adminset/install/server/server_install.sh
             安装过程需要输入管理员数据库等交互信息，如果安装中断再次执行server_install.sh即可.
             安装过程中会生成rsa密钥，位于/root/.ssh 目录下，如果已经存在，忽略即可。
             1.3.2、手动安装交互信息说明
@@ -37,7 +37,7 @@
  
         客户端正常使用需要修改脚本中的两个字段：
         token = 'HPcWR7l4NJNJ'        #token是上传到服务器的密钥可以在WEB界面的系统配置中自定义<br>
-        server_ip = '192.168.xx.xx'  #此项目为adminset server的IP地址，支持域名<br>
+        server_ip = '192.168.47.130'  #此项目为adminset server的IP地址，支持域名<br>
 
         #### step2: 拷贝install/client/ 目录到客户机的任意位置并执行:
 
@@ -47,8 +47,8 @@
         #### step3: 客户端管理
         
         service adminsetd start|stop|restart|status
-        客户端会被默认安装在/work/www/adminset/client/ 目录下
-        agent日志文件/work/www/adminset/client/agent.log
+        客户端会被默认安装在/var/opt/adminset/client/ 目录下
+        agent日志文件/var/opt/adminset/client/agent.log
         agent默认每3600秒上传一次资产和硬件信息，可以在adminset_agent.py中自定义
         agent每周一凌晨会清空所有之前生成的日志，如需要历史日志，请自行备份。
         注意：客户端全部功能需要配置服务器到客户端的ssh免密登录。
@@ -60,7 +60,7 @@
         3）这样当客户机第一次上报资产信息到服务器中去会自动触发ssh密钥分发，自动分发成功能后ansible等其它功能不需要手动再配置ssh免密登陆。
 
 #   程序目录
-    安装脚本会将文件安装在/work/www/adminset
+    安装脚本会将文件安装在/var/opt/adminset
     main为程序代码
     config 配置
     pid pid文件
@@ -120,8 +120,8 @@
 
     指向完成后点击资产管理中的webssh按钮会触发域名格式如下：
     {{ host.hostname }}.adminset.cn:2222/ssh/host/{{ host.ip }}
-    如主机名为cmdb IP为 192.168.xx.xx
-    http://cmdb.adminset.cn:2222/ssh/host/192.168.xx.xx
+    如主机名为cmdb IP为 192.168.47.130
+    http://cmdb.adminset.cn:2222/ssh/host/192.168.47.130
     通过此URL进入webssh访问界面，第一次进入时会询问用户名密码，请填写系统对应的用户和密码即可。
 
 
@@ -155,12 +155,12 @@
     输入客户机密码后认证成功可以ssh免密登入
 
     CMDB自动上报主机以后，在ansible页面执行"同步数据"按钮 将主机信息写入ansible的hosts文件
-    然后将playbook 或是role脚本上传到/work/www/adminset/data/playbook 或/work/www/adminset/data/roles
+    然后将playbook 或是role脚本上传到/var/opt/adminset/data/playbook 或/var/opt/adminset/data/roles
 
 #   shell用法
     依赖免密登入（与ansible同）
     CMDB自动上报主机以后，shell界面可以直接调用主机。
-    然后将常用脚本上传到/work/www/adminset/data/scripts 中shell脚本栏将会自动发现脚本。
+    然后将常用脚本上传到/var/opt/adminset/data/scripts 中shell脚本栏将会自动发现脚本。
 
 #   持续交付用法
     依赖免密登入（与ansible同）
@@ -171,26 +171,60 @@
        源服务器为svn时 写入svn的tag或分支路径如： tags/v1.0 或 branches/br_dev01
     3）构建清理，勾选后将清除前一次拉取的代码，如果想增量下量代码时请不要勾选此项，不勾选此项将会使用git pull拉取运程代码。
     4）shell,代码发布后执行的shell，默认会在远程部署目标服务器上依次执行。
+    5）同步删除，默认为TRUE，使用rsync的 --delete参数。
     5）本地执行，勾选后shell中的代码将在adminset所有服务器本地执行。
     6）认证信息，如果下载代码需要用户名密码等信息，在这些选择，此处调用应用管理中的认证管理。
     7）清理按钮不会终止部署任务，只会清理部署的状态，用于部署任务意外中止后任务卡进度条的情况。
-    
+    8）在程序源码的根目录放入exclude.txt文件之后，部署程序将排除其声明的目录或文件，书写格式参考rsync --exclude-from 文件写法。
+  
 #   监控平台用法
-    当adminset_agent.py自动上报信息到，监控会自动发现并配置，无需干预.
+    当adminset_agent.py自动上报信息，监控会自动发现并配置，无需干预.
     当监控页面打开时，前端JS每10秒会异步抓取监控数据
     agent默认每60秒上传一次监控数据，可以在adminset_agent.py中自定义
+    注意：监控平台依赖机房、组、或产品线，如果新加入一台服务器不属于任何机房、组或产品线，那么它将不会出现在监控平台中。
+          如果需要在监控平台显示，最简单的方法就是将服务器加入某个机房或组或产品线的项目中。
 
 #   权限管理
     1、新建权限如：
-    名字：资产管理
+    名字：cmdb
     URL：/cmdb/
     2、新建角色：
     名字：资产管理员
     可选择权限：资产管理
     3、新建用户
     在角色一栏选择：资产管理员
+    4、根据权限显示左边菜单栏，系统会根据用户的角色信息来显示对应的左边栏菜单。
+    但是在权限管理中的名字必须符合如下要求
+    权限名字为 navi 则用户会显示站点导航，以此类推
+    cmdb 资产管理 
+    appconf 应用管理 
+    setup 任务编排 
+    delivery 持续交付 
+    monitor 监控平台 
+    accounts 用户管理 
+    config 配置管理
+    mfile 文件管理
 
 
+#   LDAP认证
+    支持openldap和WindowsAD，启动LDAP认证以后原有本地账号也可使用。
+    启用LDAP：
+    1、在adminset->系统配置 界面的LDAP区域选择ldap_enable True
+    2、ldap_server 必填信息，例：ldap://ldap.scimall.net.cn
+    3、ldap_port 可选信息，如果修改过ldap服务器的端口，请填写。
+    4、base_dn 必填信息，例：ou=dev,dc=gldap,dc=com
+    5、ldap_manager 必填信息，例：cn=admin,dc=gldap,dc=com
+    6、ldap_password 必填信息，LDAP管理账户密码。
+    7、ldap_filter 必选信息，根据实际情况选择。
+    8、require_group 可选信息，允许登入的ldap组，例：cn=enable,dc=gldap,dc=com 此组需要在LDAP服务器中创建，objectClass类型必须为posixGroup
+    9、nickname 必选信息，用户名，例：cn
+    10、is_active 可选信息，自动激活ldap某个组的账号，如果不写此信息ldap用户默认在adminset中为禁用状态，此组需要在LDAP服务器中创建，objectClass类型必须为posixGroup
+    11、is_superuser 可选信息，自动激活ldap中某个组的账号为超管，此组需要在LDAP服务器中创建，objectClass类型必须为posixGroup
+
+#   文件管理
+    可以通过WEB直接对adminset 服务端的脚本文件进行管理。
+    这些文件可以直接被任务编排模块直接调用。
+    
 #   组件启动管理
     service adminset {start|stop|restart} # gunicorn管理程序
     service nginx {start|stop|restart}    # web server
@@ -206,11 +240,11 @@
     强烈建设在升级或更新adminset之前先备份数据库，并在测试环境验证通过，因为adminset在快速的发展过程中，每版本功能与结构变化较大。
     0.20 表结构变更较大，不兼容0.1x版本，如果升级请导出数据再导入。
     1) 同中版号升级（如0.2x升级到0.26）
-        下载相应版本的代码到本地，建议下载到/work/adminset，然后执行：
+        下载相应版本的代码到本地，建议下载到/opt/adminset，然后执行：
         chmdo +x adminset/install/server/rsync.sh
         adminset/install/server/rsync.sh
     2）不同中版号更新(如0.2x升级到0.3x)：
-        下载相应版本的代码到本地，建议下载到/work/adminset，然后执行：
+        下载相应版本的代码到本地，建议下载到/opt/adminset，然后执行：
         chmdo +x adminset/install/server/update.sh
         adminset/install/server/update.sh
     3)二次开发
@@ -219,7 +253,7 @@
         update.sh 可带一个参数，参数为需要更新的应用名，如变更了appconf模块的models只更新appconf可以使用update.sh appconf来更新。
         注意：如果做表结构变更，把新生成的{app_name}/migrations中的000X_initial.py文件提交到代码中，以保证更新时ORM配置正确。 
     4) 自动化部署
-        在自动化部署软件如jenkins或adminset中，拉取代码到本地后，再用命令将其复制到更新目标机器的/work/adminset 目录，然后执行：
+        在自动化部署软件如jenkins或adminset中，拉取代码到本地后，再用命令将其复制到更新目标机器的/opt/adminset 目录，然后执行：
         adminset/install/server/update.sh 或rsync.sh(同中版号)。（这一切的前提要求已经初次安装过adminset服务端）
     
 # 安全
@@ -230,4 +264,4 @@
     adminset设计初衷为超级管理员工具集成平台，所以后台权限都使用超管权限，如果生产环境中不符合安全要求，需要自定义各后台权限调用。
 
 # 开发者交流
-  QQ：169010000
+  QQ群：536962005

@@ -3,7 +3,7 @@
 from __future__ import absolute_import, unicode_literals
 from celery import shared_task
 from subprocess import Popen, PIPE
-from .models import Delivery
+from delivery.models import Delivery
 import os
 import shutil
 from time import sleep
@@ -12,14 +12,14 @@ import sh
 
 
 @shared_task
-def deploy(job_name, server_list, app_path, source_address, project_id, auth_info):
+def deploy(job_name, server_list, app_path, source_address, project_id, auth_info, rsync_status):
     cmd = ""
     p1 = Delivery.objects.get(job_name_id=project_id)
     job_workspace = "/var/opt/adminset/workspace/{0}/".format(job_name)
     log_path = job_workspace + 'logs/'
     log_name = 'deploy-' + str(p1.deploy_num) + ".log"
     with open(log_path + log_name, 'wb+') as f:
-        f.writelines("<h4>Deploying project {0} for {1}th</h4>".format(job_name, p1.deploy_num))
+        f.writelines("<h4>Deploying Project {0} For {1} Th</h4><br>".format(job_name, p1.deploy_num))
     if not app_path.endswith("/"):
         app_path += "/"
 
@@ -29,9 +29,14 @@ def deploy(job_name, server_list, app_path, source_address, project_id, auth_inf
     sleep(1)
     if p1.build_clean or p1.version:
         try:
+            with open(log_path + log_name, 'ab+') as f:
+                f.writelines("******STEP: CLEAN PREVIOUS BUILDS******\n")
             shutil.rmtree("{0}code/".format(job_workspace))
         except Exception as msg:
             print("code dir is not exists, build clean over")
+
+    with open(log_path + log_name, 'ab+') as f:
+        f.writelines("******STEP: GIT SOURCE CODE******\n\n")
     if p1.job_name.source_type == "git":
         cmd = git_clone(job_workspace, auth_info, source_address, p1)
     if p1.job_name.source_type == "svn":
@@ -40,28 +45,52 @@ def deploy(job_name, server_list, app_path, source_address, project_id, auth_inf
     p1.bar_data = 30
     p1.save()
     with open(log_path + log_name, 'ab+') as f:
-        f.writelines(cmd)
+        f.writelines(cmd+"\n")
         f.writelines(data)
+        f.writelines("\n")
     if p1.shell:
+        with open(log_path + log_name, 'ab+') as f:
+            f.writelines("******STEP: DEPLOY SHELL EXECUTE******\n\n")
         deploy_shell = job_workspace + 'scripts/deploy-' + str(p1.deploy_num) + ".sh"
         deploy_shell_name = 'deploy-' + str(p1.deploy_num) + ".sh"
         with open(deploy_shell, 'wb+') as f:
             f.writelines(p1.shell)
-        cmd = "/usr/bin/dos2unix {}".format(deploy_shell)
+        cmd = "/bin/dos2unix {}".format(deploy_shell)
         data = cmd_exec(cmd)
+    exclude_file = "{0}/code/exclude.txt".format(job_workspace)
+    with open(log_path + log_name, 'ab+') as f:
+        f.writelines("******STEP: RSYNC CODE TO SERVER******\n")
+    if rsync_status:
+        r_code = "--delete"
+    else:
+        r_code = "--verbose"
     for server in server_list:
-        cmd = "rsync --progress -raz --delete --exclude '.git' --exclude '.svn' {0}/code/ {1}:{2}".format(
-                job_workspace, server, app_path)
+        #mkdir app_path
+        try:
+            sh.ssh("root@{0}".format(server), "ls {0}".format(app_path))
+        except:
+            sh.ssh("root@{0}".format(server), "mkdir -p {0}".format(app_path))
+
+        with open(log_path + log_name, 'ab+') as f:
+            f.writelines("\n+++rsync code to {0} +++\n".format(server))
+        if os.path.exists(exclude_file):
+            cmd = "rsync --progress -raz {4} --exclude-from {3} {0}/code/ {1}:{2}".format(
+                    job_workspace, server, app_path, exclude_file, r_code)
+        else:
+            cmd = "rsync --progress -raz {3} --exclude '.git' --exclude '.svn' {0}/code/ {1}:{2}".format(
+                    job_workspace, server, app_path, r_code)
         data = cmd_exec(cmd)
         with open(log_path + log_name, 'ab+') as f:
             f.writelines(cmd)
             f.writelines(data)
         if p1.shell and not p1.shell_position:
+            with open(log_path + log_name, 'ab+') as f:
+                f.writelines("******STEP: SHELL EXECUTE ON REMOTE******\n\n")
             cmd = "scp {0} {1}:/tmp".format(deploy_shell, server)
             data = cmd_exec(cmd)
             with open(log_path + log_name, 'ab+') as f:
                 f.writelines(data)
-            cmd = "ssh {1} '/usr/bin/bash /tmp/{0}'".format(deploy_shell_name, server)
+            cmd = "ssh {1} '/bin/bash /tmp/{0}'".format(deploy_shell_name, server)
             data = cmd_exec(cmd)
             with open(log_path + log_name, 'ab+') as f:
                 f.writelines(data)
@@ -70,6 +99,8 @@ def deploy(job_name, server_list, app_path, source_address, project_id, auth_inf
             p1.bar_data = cur_bar+5
             p1.save()
     if p1.shell and p1.shell_position:
+        with open(log_path + log_name, 'ab+') as f:
+            f.writelines("******STEP: SHELL EXECUTE ON ADMINSET LOCAL SERVER******\n\n")
         # cmd = "/usr/bin/bash {0}'".format(deploy_shell)
         data = sh.bash(deploy_shell)
         with open(log_path + log_name, 'ab+') as f:
@@ -78,7 +109,7 @@ def deploy(job_name, server_list, app_path, source_address, project_id, auth_inf
     p1.status = False
     p1.save()
     with open(log_path + log_name, 'ab+') as f:
-        f.writelines("<h4>Project {0} have deployed for {1}th </h4>".format(p1.job_name, p1.deploy_num))
+        f.writelines("<h4>Project {0} Have Deployed For {1}Th </h4>".format(p1.job_name, p1.deploy_num))
     return data
 
 
