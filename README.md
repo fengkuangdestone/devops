@@ -1,5 +1,5 @@
 # AdminSet
-<img src="https://travis-ci.org/guohongze/adminset.svg?branch=master"></img> 
+<img src="https://travis-ci.org/guohongze/adminset.svg?branch=master"></img>
 <img src="https://img.shields.io/hexpm/l/plug.svg"></img>
 [![release](https://img.shields.io/github/release/guohongze/adminset.svg)](https://github.com/guohongze/adminset/releases)
 <br>
@@ -32,7 +32,7 @@ adminset/install/server/server_install.sh<br>
 ## 客户端安装
 客户端脚本目前rhel/centos6、centos7,ubuntu16.04<br>
 客户端python版本支持2.6.6及以上<br>
-说明：为保证注册IP是管理IP（后续会被ansible等调用），客户端的IP抓取目前使用主机名解析，否则报错。 
+说明：为保证注册IP是管理IP（后续会被ansible等调用），客户端的IP抓取目前使用主机名解析，否则报错。
 如：主机名为cn-bj-web01 请在/etc/hosts中加入相应的解析 192.168.x.x cn-bj-web01，这样再执行adminset_agent.py 可以保证正常运行。
 #### step1: 修改文件install/client/adminset_agent.py :
 ```
@@ -58,9 +58,9 @@ http://your_server_ip<br>
 手动安装使用自定义创建的super admin用户名密码
 
 ## 说明
-使用参考，<a href="https://github.com/fengkuangdestone/adminset/blob/master/docs/Manual.md">使用说明</a><br>
-功能参考，<a href="https://github.com/fengkuangdestone/adminset/wiki/AdminSet">功能预览</a><br>
-FAQ参考，<a href="https://github.com/fengkuangdestone/adminset/wiki/FAQ">常见问题</a>
+使用参考，<a href="https://github.com/guohongze/adminset/blob/master/docs/Manual.md">使用说明</a><br>
+功能参考，<a href="https://github.com/guohongze/adminset/wiki/AdminSet">功能预览</a><br>
+FAQ参考，<a href="https://github.com/guohongze/adminset/wiki/FAQ">常见问题</a>
 
 # adminset demo
 每2小时重置一次数据<br>
@@ -74,6 +74,5 @@ webssh用户名密码相同<br>
 由于开发方便，在django的settings中开启了DEBUG，在生产中需要关闭并指定自己的域名。
 
 # 开发者交流
-q号 169010000<br>
-
-
+请加入开发者群<br>
+2号群 536962005<br>

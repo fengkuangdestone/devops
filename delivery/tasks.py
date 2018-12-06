@@ -6,20 +6,31 @@ from subprocess import Popen, PIPE
 from delivery.models import Delivery
 import os
 import shutil
-from time import sleep
+from time import sleep, ctime
 import re
 import sh
 
 
 @shared_task
-def deploy(job_name, server_list, app_path, source_address, project_id, auth_info, rsync_status):
+def deploy(job_name, server_list, app_path, source_address, project_id, auth_info, rsync_status, source_auth):
     cmd = ""
+    try:
+        username = auth_info["username"]
+        deploy_port = auth_info["deploy_port"]
+    except:
+        username = "root"
+        deploy_port = 22
+
     p1 = Delivery.objects.get(job_name_id=project_id)
     job_workspace = "/var/opt/adminset/workspace/{0}/".format(job_name)
     log_path = job_workspace + 'logs/'
     log_name = 'deploy-' + str(p1.deploy_num) + ".log"
     with open(log_path + log_name, 'wb+') as f:
-        f.writelines("<h4>Deploying Project {0} For {1} Th</h4><br>".format(job_name, p1.deploy_num))
+        f.writelines("<h4>Deploying Project {0} For {1} Th</h4>\n".format(job_name, p1.deploy_num))
+        f.writelines("Code version: {0}".format(p1.version))
+        f.writelines("\n")
+        f.writelines("Deploy time: {0}".format(ctime()))
+        f.writelines("\n\n")
     if not app_path.endswith("/"):
         app_path += "/"
 
@@ -37,10 +48,15 @@ def deploy(job_name, server_list, app_path, source_address, project_id, auth_inf
 
     with open(log_path + log_name, 'ab+') as f:
         f.writelines("******STEP: GIT SOURCE CODE******\n\n")
+
+    if source_auth:
+        git_auth = auth_info
+    else:
+        git_auth = None
     if p1.job_name.source_type == "git":
-        cmd = git_clone(job_workspace, auth_info, source_address, p1)
+        cmd = git_clone(job_workspace, git_auth, source_address, p1)
     if p1.job_name.source_type == "svn":
-        cmd = svn_clone(job_workspace, auth_info, source_address, p1)
+        cmd = svn_clone(job_workspace, git_auth, source_address, p1)
     data = cmd_exec(cmd)
     p1.bar_data = 30
     p1.save()
@@ -67,18 +83,20 @@ def deploy(job_name, server_list, app_path, source_address, project_id, auth_inf
     for server in server_list:
         #mkdir app_path
         try:
-            sh.ssh("root@{0}".format(server), "ls {0}".format(app_path))
+            sh.ssh("-p {0}".format(deploy_port), "{1}@{0}".format(server, username),
+                   "ls {0}".format(app_path))
         except:
-            sh.ssh("root@{0}".format(server), "mkdir -p {0}".format(app_path))
+            sh.ssh("-p {0}".format(deploy_port), "{1}@{0}".format(server, username),
+                   "mkdir -p {0}".format(app_path))
 
         with open(log_path + log_name, 'ab+') as f:
             f.writelines("\n+++rsync code to {0} +++\n".format(server))
         if os.path.exists(exclude_file):
-            cmd = "rsync --progress -raz {4} --exclude-from {3} {0}/code/ {1}:{2}".format(
-                    job_workspace, server, app_path, exclude_file, r_code)
+            cmd = "rsync -e 'ssh -p {6}' --progress -raz {4} --exclude-from {3} {0}/code/ {5}@{1}:{2}".format(
+                    job_workspace, server, app_path, exclude_file, r_code, username, deploy_port)
         else:
-            cmd = "rsync --progress -raz {3} --exclude '.git' --exclude '.svn' {0}/code/ {1}:{2}".format(
-                    job_workspace, server, app_path, r_code)
+            cmd = "rsync -e 'ssh -p {5}' --progress -raz {3} --exclude '.git' --exclude '.svn' {0}/code/ {4}@{1}:{2}".format(
+                    job_workspace, server, app_path, r_code, username, deploy_port)
         data = cmd_exec(cmd)
         with open(log_path + log_name, 'ab+') as f:
             f.writelines(cmd)
@@ -86,11 +104,11 @@ def deploy(job_name, server_list, app_path, source_address, project_id, auth_inf
         if p1.shell and not p1.shell_position:
             with open(log_path + log_name, 'ab+') as f:
                 f.writelines("******STEP: SHELL EXECUTE ON REMOTE******\n\n")
-            cmd = "scp {0} {1}:/tmp".format(deploy_shell, server)
+            cmd = "scp -P {3} {0} {2}@{1}:/tmp".format(deploy_shell, server, username, deploy_port)
             data = cmd_exec(cmd)
             with open(log_path + log_name, 'ab+') as f:
                 f.writelines(data)
-            cmd = "ssh {1} '/bin/bash /tmp/{0}'".format(deploy_shell_name, server)
+            cmd = "ssh -p {3} {2}@{1} '/bin/bash /tmp/{0}'".format(deploy_shell_name, server, username, deploy_port)
             data = cmd_exec(cmd)
             with open(log_path + log_name, 'ab+') as f:
                 f.writelines(data)
